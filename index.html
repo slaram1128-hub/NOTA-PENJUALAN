@@ -59,7 +59,7 @@
     .stat-box { padding: 15px; border-radius: 8px; color: white; text-align: center; }
 
     /* Area Tanda Tangan & Cap */
-    .nota-footer { display: flex; justify-content: space-between; margin-top: 30px; text-align: center; }
+    .nota-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; }
     .ttd-container { position: relative; width: 180px; height: 100px; margin: 10px auto; }
     .ttd-img { max-width: 100%; max-height: 100px; object-fit: contain; }
     .cap-img { position: absolute; top: 0; left: 20px; max-width: 100px; max-height: 100px; opacity: 0.85; object-fit: contain; }
@@ -158,15 +158,24 @@
         </div>
       </div>
 
-      <!-- Unggah Tanda Tangan & Cap -->
+      <!-- Unggah Tanda Tangan & Kotak Rekening -->
       <div class="nota-footer">
-        <div style="width: 40%;">
-          <p>Penerima / Pembeli,</p>
-          <div style="height: 80px;"></div>
-          <p>( .................................... )</p>
+        
+        <!-- Kotak Rekening Bank (Dapat Diedit Langsung) -->
+        <div style="border: 2px dashed #94a3b8; border-radius: 8px; padding: 12px 16px; min-width: 280px; background-color: #f8fafc;">
+          <div style="font-weight: bold; font-size: 13px; color: #334155; margin-bottom: 6px; text-transform: uppercase;">
+            Pembayaran Via Transfer:
+          </div>
+          <div style="font-size: 13px; line-height: 1.6; color: #1e293b;">
+            <div>Bank: <span contenteditable="true" style="font-weight: bold; outline: none; border-bottom: 1px dotted #cbd5e1; padding: 0 4px;">BCA / BRI / Mandiri</span></div>
+            <div>No. Rek: <span contenteditable="true" style="font-weight: bold; outline: none; border-bottom: 1px dotted #cbd5e1; padding: 0 4px;">1234-5678-9012</span></div>
+            <div>a.n: <span contenteditable="true" style="font-weight: bold; outline: none; border-bottom: 1px dotted #cbd5e1; padding: 0 4px;">KEDAI ARIEL</span></div>
+          </div>
         </div>
-        <div style="width: 40%;">
-          <p>Hormat Kami,</p>
+
+        <!-- Hormat Kami / TTD / Cap -->
+        <div style="width: 220px; text-align: center;">
+          <p style="font-size: 14px;">Hormat Kami,</p>
           <div class="ttd-container">
             <img id="previewCap" class="cap-img" style="display:none;">
             <img id="previewTTD" class="ttd-img" style="display:none;">
@@ -180,6 +189,7 @@
             <input type="file" accept="image/*" onchange="uploadGambar(this, 'previewCap', 'capData')">
           </div>
         </div>
+
       </div>
 
     </div>
