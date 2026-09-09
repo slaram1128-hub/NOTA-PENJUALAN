@@ -1,671 +1,205 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Invoice - Kedai Ariel</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @media print {
-            .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            body { background: white; padding: 0; }
-            .invoice-box { border: none !important; box-shadow: none !important; width: 100% !important; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplikasi Invoice - Kedai Ariel</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; }
+    .container { max-width: 1000px; margin: 0 auto; }
+    
+    header { background: #1e1b4b; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 20px; }
+    
+    .card { background: var(--surface); padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
+    .card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #334155; }
+    
+    .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: #64748b; }
+    input, select, textarea { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; width: 100%; }
+    
+    .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-success { background: #10b981; color: white; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-secondary { background: #64748b; color: white; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+    th { background: #f1f5f9; font-weight: 600; }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
+    .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; }
+  </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+<body>
 
-    <!-- Navbar / Tab Menu -->
-    <div class="bg-indigo-900 text-white p-4 shadow-md no-print">
-        <div class="max-w-6xl mx-auto flex flex-wrap justify-between items-center gap-2">
-            <h1 class="text-xl font-bold flex items-center gap-2">
-                ?? KEDAI ARIEL - Invoice & Laba
-            </h1>
-            <div class="flex gap-2">
-                <button onclick="switchTab('invoice')" id="tab-invoice" class="px-3 py-1.5 rounded bg-indigo-600 font-medium text-sm">Buat / Edit Nota</button>
-                <button onclick="switchTab('rekap')" id="tab-rekap" class="px-3 py-1.5 rounded bg-indigo-800 hover:bg-indigo-700 font-medium text-sm">Rekap & Laba</button>
-                <button onclick="switchTab('database')" id="tab-database" class="px-3 py-1.5 rounded bg-indigo-800 hover:bg-indigo-700 font-medium text-sm">?? Database Barang</button>
-            </div>
-        </div>
+<div class="container">
+  <header>
+    <h1>Kedai Ariel - Invoice & Laba</h1>
+  </header>
+
+  <!-- Form Tambah Satu Barang -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+      <span class="card-title" style="margin:0;">Tambah / Edit Item Barang Database</span>
+      <button class="btn btn-success" onclick="bukaModalPaste()">📋 Import / Paste Banyak Barang</button>
     </div>
-
-    <div class="max-w-6xl mx-auto p-4 md:p-6">
-        
-        <!-- SECTION 1: INVOICE FORM & VIEW -->
-        <div id="section-invoice" class="space-y-6">
-            
-            <!-- Toolbar Action -->
-            <div class="bg-white p-4 rounded-lg shadow flex flex-wrap gap-3 justify-between items-center no-print">
-                <div class="flex gap-2">
-                    <button onclick="resetForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded flex items-center gap-1 font-medium text-sm">
-                        ? Nota Baru
-                    </button>
-                    <button onclick="saveInvoice()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-medium text-sm">
-                        ?? Simpan Nota
-                    </button>
-                </div>
-                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded flex items-center gap-1 font-medium text-sm">
-                    ??? Cetak / Print PDF
-                </button>
-            </div>
-
-            <!-- Invoice Sheet Area -->
-            <div class="invoice-box bg-white p-8 rounded-lg shadow-lg max-w-4xl mx-auto border border-slate-200">
-                <!-- Header / Identity -->
-                <div class="border-b pb-4 mb-6 flex justify-between items-center">
-                    <div>
-                        <h2 class="text-3xl font-extrabold text-indigo-900 tracking-wide">KEDAI ARIEL</h2>
-                        <p class="text-xs text-slate-500">Nota Penjualan & Tagihan Resmi</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-xl font-bold text-slate-400">INVOICE</span>
-                    </div>
-                </div>
-
-                <!-- Buyer & Invoice Info -->
-                <div class="grid grid-cols-2 gap-4 mb-6 text-sm">
-                    <div class="space-y-2">
-                        <div class="flex items-center">
-                            <span class="w-32 font-semibold">No Invoice</span>
-                            <span>: </span>
-                            <input type="text" id="inv-no" class="border rounded px-2 py-1 ml-1 w-40 font-bold text-slate-700 no-print" value="1">
-                            <span class="print-only font-bold ml-1" id="lbl-inv-no"></span>
-                        </div>
-                        <div class="flex items-center">
-                            <span class="w-32 font-semibold">Tanggal Pesanan</span>
-                            <span>: </span>
-                            <input type="date" id="inv-date" class="border rounded px-2 py-1 ml-1 w-40 no-print">
-                            <span class="print-only ml-1" id="lbl-inv-date"></span>
-                        </div>
-                    </div>
-                    <div class="space-y-2">
-                        <div class="flex items-center">
-                            <span class="w-28 font-semibold">Nama Pembeli</span>
-                            <span>: </span>
-                            <input type="text" id="inv-buyer" class="border rounded px-2 py-1 ml-1 flex-1 no-print" placeholder="Nama Pelanggan / Toko">
-                            <span class="print-only ml-1" id="lbl-inv-buyer"></span>
-                        </div>
-                        <div class="flex items-start">
-                            <span class="w-28 font-semibold">Alamat</span>
-                            <span>: </span>
-                            <textarea id="inv-address" rows="2" class="border rounded px-2 py-1 ml-1 flex-1 no-print" placeholder="Alamat Pembeli"></textarea>
-                            <span class="print-only ml-1" id="lbl-inv-address"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Items Table -->
-                <table class="w-full text-sm text-left border-collapse border border-slate-300 mb-4">
-                    <thead>
-                        <tr class="bg-slate-100 border-b border-slate-300">
-                            <th class="p-2 border border-slate-300 w-12 text-center">No</th>
-                            <th class="p-2 border border-slate-300">Nama Barang</th>
-                            <th class="p-2 border border-slate-300 w-20 text-center">Jumlah</th>
-                            <th class="p-2 border border-slate-300 w-20 text-center">Satuan</th>
-                            <th class="p-2 border border-slate-300 w-32 text-right">Harga Satuan</th>
-                            <th class="p-2 border border-slate-300 w-36 text-right">Total</th>
-                            <th class="p-2 border border-slate-300 w-10 text-center no-print">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="item-rows">
-                        <!-- Dynamic Item Rows -->
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="5" class="p-2 border border-slate-300 font-bold text-right">Total</td>
-                            <td class="p-2 border border-slate-300 font-bold text-right" id="grand-total">Rp 0</td>
-                            <td class="no-print border border-slate-300"></td>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <button onclick="addItemRow()" class="no-print bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded text-sm mb-6 font-medium">
-                    + Tambah Baris
-                </button>
-
-                <!-- Footer Section (Terbilang, Rekening, Ttd & Cap) -->
-                <div class="mt-6 pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <p class="font-semibold">Terbilang :</p>
-                        <p id="terbilang-text" class="italic bg-slate-50 p-2 rounded border border-slate-200 mt-1 min-h-[40px] capitalize text-slate-700">
-                            Nol Rupiah
-                        </p>
-
-                        <div class="mt-4">
-                            <p class="font-semibold">No Rekening Supplier:</p>
-                            <input type="text" id="inv-rekening" class="border rounded px-2 py-1 w-full text-xs mt-1 no-print" value="Bank Mandiri a.n Kedai Ariel">
-                            <p class="print-only text-xs mt-1" id="lbl-inv-rekening"></p>
-                        </div>
-                    </div>
-
-                    <!-- Area Tanda Tangan & Cap Digital -->
-                    <div class="text-center flex flex-col justify-between items-center h-48 relative">
-                        <div>
-                            <p id="lbl-ttd-date">Gorontalo, -</p>
-                            <p class="font-semibold">Hormat Kami,</p>
-                        </div>
-
-                        <!-- Gambar Scan Cap & TTD -->
-                        <div class="relative w-44 h-24 my-1 flex items-center justify-center border border-dashed border-slate-300 rounded no-print-border">
-                            <img id="img-ttd-preview" src="" alt="Scan TTD & Cap" class="max-h-full max-w-full object-contain hidden">
-                            <span id="txt-ttd-placeholder" class="text-xs text-slate-400 italic no-print">[ Upload Scan TTD + Cap ]</span>
-                        </div>
-
-                        <!-- Input File Upload TTD (Hanya tampil di Layar, tersembunyi saat diprint) -->
-                        <div class="no-print mt-1">
-                            <input type="file" id="file-ttd" accept="image/*" onchange="uploadTTD(event)" class="text-xs text-slate-500 w-48">
-                        </div>
-
-                        <div>
-                            <p class="font-bold underline uppercase">KEDAI ARIEL</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+    
+    <form id="formBarang" onsubmit="simpanSatuBarang(event)">
+      <div class="grid-form">
+        <div class="form-group">
+          <label>Nama Barang</label>
+          <input type="text" id="namaBarang" placeholder="Contoh: Cabe Merah" required>
         </div>
-
-        <!-- SECTION 2: REKAP HARIAN & KALKULASI LABA -->
-        <div id="section-rekap" class="hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                    <p class="text-xs text-slate-500 font-semibold uppercase">Total Omset Penjualan</p>
-                    <h3 class="text-xl font-bold text-slate-800" id="summary-omset">Rp 0</h3>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-amber-500">
-                    <p class="text-xs text-slate-500 font-semibold uppercase">Total Modal (Harga Beli)</p>
-                    <h3 class="text-xl font-bold text-slate-800" id="summary-modal">Rp 0</h3>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-emerald-500">
-                    <p class="text-xs text-slate-500 font-semibold uppercase">Total Estimasi Laba Bersih</p>
-                    <h3 class="text-xl font-bold text-emerald-600" id="summary-laba">Rp 0</h3>
-                </div>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-lg font-bold mb-4 text-slate-800">Rekap Harian Transaksi & Keuntungan</h2>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
-                        <thead>
-                            <tr class="bg-slate-100">
-                                <th class="p-2 border border-slate-300">No Inv</th>
-                                <th class="p-2 border border-slate-300">Tanggal</th>
-                                <th class="p-2 border border-slate-300">Nama Pembeli</th>
-                                <th class="p-2 border border-slate-300 text-right">Total Jual</th>
-                                <th class="p-2 border border-slate-300 text-right">Total Modal</th>
-                                <th class="p-2 border border-slate-300 text-right">Est. Laba</th>
-                                <th class="p-2 border border-slate-300 text-center">Status Pembayaran</th>
-                                <th class="p-2 border border-slate-300 text-center">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rekap-rows"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="form-group">
+          <label>Satuan</label>
+          <input type="text" id="satuanBarang" placeholder="kg / bks / ball" required>
         </div>
-
-        <!-- SECTION 3: DATABASE BARANG MANAGEMENT -->
-        <div id="section-database" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow">
-                <h2 class="text-lg font-bold mb-4 text-slate-800">Tambah / Edit Item Barang Database</h2>
-                <form id="form-barang" onsubmit="saveBarang(event)" class="grid grid-cols-1 md:grid-cols-5 gap-3">
-                    <input type="hidden" id="db-index" value="-1">
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold mb-1">Nama Barang</label>
-                        <input type="text" id="db-name" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="Contoh: Cabe Merah" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Satuan</label>
-                        <input type="text" id="db-unit" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="kg / bks / pouch" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Harga Jual (Rp)</label>
-                        <input type="number" id="db-price" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="85000" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1">Harga Beli / Modal (Rp)</label>
-                        <input type="number" id="db-cost" class="w-full border rounded px-2 py-1.5 text-sm" placeholder="72500" required>
-                    </div>
-                    <div class="md:col-span-5 flex gap-2 justify-end mt-2">
-                        <button type="button" onclick="resetBarangForm()" class="bg-slate-300 hover:bg-slate-400 text-slate-800 px-4 py-1.5 rounded text-sm font-medium">Batal</button>
-                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded text-sm font-medium">Simpan Barang</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="bg-white p-6 rounded-lg shadow">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold text-slate-800">Master Data Barang (<span id="db-count">0</span> Item)</h2>
-                    <input type="text" id="search-db" oninput="renderDatabaseTable()" class="border rounded px-3 py-1 text-sm w-64" placeholder="?? Cari Barang...">
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-sm text-left border-collapse border border-slate-300">
-                        <thead>
-                            <tr class="bg-slate-100">
-                                <th class="p-2 border border-slate-300 w-12 text-center">No</th>
-                                <th class="p-2 border border-slate-300">Nama Barang</th>
-                                <th class="p-2 border border-slate-300 text-center">Satuan</th>
-                                <th class="p-2 border border-slate-300 text-right">Harga Jual</th>
-                                <th class="p-2 border border-slate-300 text-right">Harga Beli (Modal)</th>
-                                <th class="p-2 border border-slate-300 text-right">Margin Laba</th>
-                                <th class="p-2 border border-slate-300 text-center w-28">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="database-rows"></tbody>
-                    </table>
-                </div>
-            </div>
+        <div class="form-group">
+          <label>Harga Jual (Rp)</label>
+          <input type="number" id="hargaJual" placeholder="85000" required>
         </div>
+        <div class="form-group">
+          <label>Harga Beli / Modal (Rp)</label>
+          <input type="number" id="hargaBeli" placeholder="72500" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="float: right;">Simpan Barang</button>
+      <div style="clear: both;"></div>
+    </form>
+  </div>
 
+  <!-- Master Data Barang -->
+  <div class="card">
+    <div class="card-title">Master Data Barang (<span id="totalBarang">0</span> Item)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Barang</th>
+          <th>Satuan</th>
+          <th>Harga Jual</th>
+          <th>Harga Beli (Modal)</th>
+          <th>Margin Laba</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tabelBarang">
+        <!-- Data dimasukkan via Javascript -->
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Paste Data Excel / Word -->
+<div class="modal" id="modalPaste">
+  <div class="modal-content">
+    <h3 style="margin-bottom: 10px;">Salin / Paste Data dari Excel atau Word</h3>
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">
+      Copy kolom dari Excel atau Word dengan urutan: <br>
+      <b>Nama Barang | Satuan | Harga Jual | Harga Beli</b>
+    </p>
+    <textarea id="teksPaste" rows="8" placeholder="Contoh salinan dari Excel:&#10;Bawang Merah	kg	40000	35000&#10;Cabe Rawit	kg	145000	108000"></textarea>
+    <div style="margin-top: 15px; display: flex; justify-content: flex-end; gap: 10px;">
+      <button class="btn btn-secondary" onclick="tutupModalPaste()">Batal</button>
+      <button class="btn btn-primary" onclick="prosesPasteBarang()">Proses & Simpan Semua</button>
     </div>
+  </div>
+</div>
 
-    <!-- Script Logic -->
-    <script>
-        const defaultBarang = [
-            { name: "Batang bawang bersih (ball)", unit: "ball", price: 35000, cost: 32500 },
-            { name: "Batang bawang bersih (ikat)", unit: "ikat", price: 6000, cost: 5000 },
-            { name: "bawang bombai", unit: "kg", price: 40000, cost: 35000 },
-            { name: "bawang merah", unit: "kg", price: 40000, cost: 38000 },
-            { name: "Bawang putih", unit: "kg", price: 37500, cost: 35000 },
-            { name: "cabe kriting", unit: "kg", price: 85000, cost: 72500 },
-            { name: "cabe rawit", unit: "kg", price: 145000, cost: 108000 }
-        ];
+<script>
+  let dbBarang = JSON.parse(localStorage.getItem('dbBarang')) || [];
 
-        let barangDatabase = JSON.parse(localStorage.getItem('barangDatabase')) || defaultBarang;
-        let invoices = JSON.parse(localStorage.getItem('invoices')) || [];
+  function tampilkanBarang() {
+    const tbody = document.getElementById('tabelBarang');
+    document.getElementById('totalBarang').innerText = dbBarang.length;
+    tbody.innerHTML = '';
 
-        if(!localStorage.getItem('barangDatabase')) {
-            localStorage.setItem('barangDatabase', JSON.stringify(barangDatabase));
+    dbBarang.forEach((item, index) => {
+      const margin = item.jual - item.beli;
+      tbody.innerHTML += `
+        <tr>
+          <td>${index + 1}</td>
+          <td><b>${item.nama}</b></td>
+          <td>${item.satuan}</td>
+          <td>Rp ${Number(item.jual).toLocaleString('id-ID')}</td>
+          <td>Rp ${Number(item.beli).toLocaleString('id-ID')}</td>
+          <td style="color: green; font-weight: bold;">Rp ${Number(margin).toLocaleString('id-ID')}</td>
+          <td>
+            <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="hapusBarang(${index})">Hapus</button>
+          </td>
+        </tr>
+      `;
+    });
+    localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
+  }
+
+  function simpanSatuBarang(e) {
+    e.preventDefault();
+    const nama = document.getElementById('namaBarang').value;
+    const satuan = document.getElementById('satuanBarang').value;
+    const jual = parseFloat(document.getElementById('hargaJual').value);
+    const beli = parseFloat(document.getElementById('hargaBeli').value);
+
+    dbBarang.push({ nama, satuan, jual, beli });
+    tampilkanBarang();
+    document.getElementById('formBarang').reset();
+  }
+
+  function hapusBarang(index) {
+    if(confirm('Hapus barang ini?')) {
+      dbBarang.splice(index, 1);
+      tampilkanBarang();
+    }
+  }
+
+  function bukaModalPaste() { document.getElementById('modalPaste').style.display = 'flex'; }
+  function tutupModalPaste() { document.getElementById('modalPaste').style.display = 'none'; }
+
+  function prosesPasteBarang() {
+    const teks = document.getElementById('teksPaste').value.trim();
+    if (!teks) return alert('Silakan tempel/paste data terlebih dahulu!');
+
+    const baris = teks.split('\n');
+    let jumlahBerhasil = 0;
+
+    baris.forEach(row => {
+      // Split berdasarkan Tab (Excel) atau koma/titik koma
+      const kolom = row.split(/\t|,/);
+      if (kolom.length >= 3) {
+        const nama = kolom[0].trim();
+        const satuan = kolom[1].trim();
+        const jual = parseFloat(kolom[2].replace(/[^0-9]/g, '')) || 0;
+        const beli = kolom[3] ? (parseFloat(kolom[3].replace(/[^0-9]/g, '')) || 0) : 0;
+
+        if (nama) {
+          dbBarang.push({ nama, satuan, jual, beli });
+          jumlahBerhasil++;
         }
+      }
+    });
 
-        document.getElementById('inv-date').valueAsDate = new Date();
+    tampilkanBarang();
+    tutupModalPaste();
+    document.getElementById('teksPaste').value = '';
+    alert(`Berhasil menambahkan ${jumlahBerhasil} barang ke Master Data!`);
+  }
 
-        // Load Gambar TTD Terimpan
-        window.onload = function() {
-            const savedTTD = localStorage.getItem('kedaiAriel_TTD');
-            if(savedTTD) {
-                const img = document.getElementById('img-ttd-preview');
-                img.src = savedTTD;
-                img.classList.remove('hidden');
-                document.getElementById('txt-ttd-placeholder').classList.add('hidden');
-            }
-            addItemRow();
-        }
+  // Muat data saat halaman dibuka
+  tampilkanBarang();
+</script>
 
-        // Fitur Upload Scan TTD & Cap
-        function uploadTTD(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64Image = e.target.result;
-                    const img = document.getElementById('img-ttd-preview');
-                    img.src = base64Image;
-                    img.classList.remove('hidden');
-                    document.getElementById('txt-ttd-placeholder').classList.add('hidden');
-                    // Simpan permanen di browser
-                    localStorage.setItem('kedaiAriel_TTD', base64Image);
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function switchTab(tab) {
-            document.getElementById('section-invoice').classList.add('hidden');
-            document.getElementById('section-rekap').classList.add('hidden');
-            document.getElementById('section-database').classList.add('hidden');
-
-            document.getElementById('tab-invoice').className = "px-3 py-1.5 rounded bg-indigo-800 hover:bg-indigo-700 font-medium text-sm";
-            document.getElementById('tab-rekap').className = "px-3 py-1.5 rounded bg-indigo-800 hover:bg-indigo-700 font-medium text-sm";
-            document.getElementById('tab-database').className = "px-3 py-1.5 rounded bg-indigo-800 hover:bg-indigo-700 font-medium text-sm";
-
-            if(tab === 'invoice') {
-                document.getElementById('section-invoice').classList.remove('hidden');
-                document.getElementById('tab-invoice').className = "px-3 py-1.5 rounded bg-indigo-600 font-medium text-sm";
-            } else if(tab === 'rekap') {
-                document.getElementById('section-rekap').classList.remove('hidden');
-                document.getElementById('tab-rekap').className = "px-3 py-1.5 rounded bg-indigo-600 font-medium text-sm";
-                renderRekap();
-            } else if(tab === 'database') {
-                document.getElementById('section-database').classList.remove('hidden');
-                document.getElementById('tab-database').className = "px-3 py-1.5 rounded bg-indigo-600 font-medium text-sm";
-                renderDatabaseTable();
-            }
-        }
-
-        function addItemRow(nama = '', jumlah = 1, satuan = 'kg', harga = 0, hargaBeli = 0) {
-            const tbody = document.getElementById('item-rows');
-            const rowCount = tbody.children.length + 1;
-
-            let optionsHtml = `<option value="">-- Pilih Barang --</option>`;
-            barangDatabase.forEach(item => {
-                const selected = item.name === nama ? 'selected' : '';
-                optionsHtml += `<option value="${item.name}" ${selected}>${item.name}</option>`;
-            });
-
-            const tr = document.createElement('tr');
-            tr.className = "item-row";
-            tr.innerHTML = `
-                <td class="p-2 border border-slate-300 text-center row-num">${rowCount}</td>
-                <td class="p-2 border border-slate-300">
-                    <select class="w-full border rounded px-1 item-select no-print" onchange="onItemSelect(this)">
-                        ${optionsHtml}
-                    </select>
-                    <span class="print-only item-name-text">${nama}</span>
-                    <input type="hidden" class="item-cost" value="${hargaBeli}">
-                </td>
-                <td class="p-2 border border-slate-300">
-                    <input type="number" step="0.1" class="w-full border rounded px-1 text-center item-qty no-print" value="${jumlah}" oninput="calculateTotal()">
-                    <span class="print-only text-center block">${jumlah}</span>
-                </td>
-                <td class="p-2 border border-slate-300">
-                    <input type="text" class="w-full border rounded px-1 text-center item-unit no-print" value="${satuan}" oninput="calculateTotal()">
-                    <span class="print-only text-center block">${satuan}</span>
-                </td>
-                <td class="p-2 border border-slate-300">
-                    <input type="number" class="w-full border rounded px-1 text-right item-price no-print" value="${harga}" oninput="calculateTotal()">
-                    <span class="print-only text-right block">${formatRupiah(harga)}</span>
-                </td>
-                <td class="p-2 border border-slate-300 text-right font-medium item-total">
-                    Rp 0
-                </td>
-                <td class="p-2 border border-slate-300 text-center no-print">
-                    <button onclick="removeRow(this)" class="text-red-500 hover:text-red-700 font-bold">×</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-
-            if (nama) {
-                const selectElem = tr.querySelector('.item-select');
-                selectElem.value = nama;
-            }
-
-            calculateTotal();
-        }
-
-        function onItemSelect(selectElem) {
-            const selectedName = selectElem.value;
-            const row = selectElem.closest('tr');
-            const foundItem = barangDatabase.find(b => b.name === selectedName);
-
-            if (foundItem) {
-                row.querySelector('.item-unit').value = foundItem.unit;
-                row.querySelector('.item-price').value = foundItem.price;
-                row.querySelector('.item-cost').value = foundItem.cost || 0;
-            }
-            calculateTotal();
-        }
-
-        function removeRow(btn) {
-            btn.closest('tr').remove();
-            reindexRows();
-            calculateTotal();
-        }
-
-        function reindexRows() {
-            const rows = document.querySelectorAll('#item-rows tr');
-            rows.forEach((row, idx) => {
-                row.querySelector('.row-num').innerText = idx + 1;
-            });
-        }
-
-        function calculateTotal() {
-            let grandTotal = 0;
-            const rows = document.querySelectorAll('#item-rows tr');
-
-            rows.forEach(row => {
-                const selectVal = row.querySelector('.item-select').value;
-                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const unit = row.querySelector('.item-unit').value;
-                const price = parseFloat(row.querySelector('.item-price').value) || 0;
-                const total = qty * price;
-                grandTotal += total;
-
-                row.querySelector('.item-total').innerText = formatRupiah(total);
-                row.querySelector('.item-name-text').innerText = selectVal;
-                
-                const printSpans = row.querySelectorAll('.print-only');
-                if (printSpans.length >= 4) {
-                    printSpans[1].innerText = qty;
-                    printSpans[2].innerText = unit;
-                    printSpans[3].innerText = formatRupiah(price);
-                }
-            });
-
-            document.getElementById('grand-total').innerText = formatRupiah(grandTotal);
-            document.getElementById('terbilang-text').innerText = terbilang(grandTotal) + " Rupiah";
-
-            document.getElementById('lbl-inv-no').innerText = document.getElementById('inv-no').value;
-            document.getElementById('lbl-inv-date').innerText = document.getElementById('inv-date').value;
-            document.getElementById('lbl-inv-buyer').innerText = document.getElementById('inv-buyer').value;
-            document.getElementById('lbl-inv-address').innerText = document.getElementById('inv-address').value;
-            document.getElementById('lbl-inv-rekening').innerText = document.getElementById('inv-rekening').value;
-            
-            const d = new Date(document.getElementById('inv-date').value);
-            const dateStr = !isNaN(d) ? d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
-            document.getElementById('lbl-ttd-date').innerText = `Gorontalo, ${dateStr}`;
-        }
-
-        function formatRupiah(angka) {
-            return 'Rp ' + Number(angka || 0).toLocaleString('id-ID');
-        }
-
-        function terbilang(nilai) {
-            let bilangan = Math.floor(Math.abs(nilai));
-            let huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
-            let temp = "";
-
-            if (bilangan < 12) {
-                temp = " " + huruf[bilangan];
-            } else if (bilangan < 20) {
-                temp = terbilang(bilangan - 10) + " Belas";
-            } else if (bilangan < 100) {
-                temp = terbilang(Math.floor(bilangan / 10)) + " Puluh" + terbilang(bilangan % 10);
-            } else if (bilangan < 200) {
-                temp = " Seratus" + terbilang(bilangan - 100);
-            } else if (bilangan < 1000) {
-                temp = terbilang(Math.floor(bilangan / 100)) + " Ratus" + terbilang(bilangan % 100);
-            } else if (bilangan < 2000) {
-                temp = " Seribu" + terbilang(bilangan - 1000);
-            } else if (bilangan < 1000000) {
-                temp = terbilang(Math.floor(bilangan / 1000)) + " Ribu" + terbilang(bilangan % 1000);
-            } else if (bilangan < 1000000000) {
-                temp = terbilang(Math.floor(bilangan / 1000000)) + " Juta" + terbilang(bilangan % 1000000);
-            }
-            return temp.trim();
-        }
-
-        function resetForm() {
-            document.getElementById('inv-no').value = invoices.length + 1;
-            document.getElementById('inv-buyer').value = '';
-            document.getElementById('inv-address').value = '';
-            document.getElementById('item-rows').innerHTML = '';
-            addItemRow();
-        }
-
-        function saveInvoice() {
-            const no = document.getElementById('inv-no').value;
-            const date = document.getElementById('inv-date').value;
-            const buyer = document.getElementById('inv-buyer').value;
-            const address = document.getElementById('inv-address').value;
-            const rekening = document.getElementById('inv-rekening').value;
-
-            let items = [];
-            let totalAmount = 0;
-            let totalCost = 0;
-
-            document.querySelectorAll('#item-rows tr').forEach(row => {
-                const name = row.querySelector('.item-select').value;
-                const qty = parseFloat(row.querySelector('.item-qty').value) || 0;
-                const unit = row.querySelector('.item-unit').value;
-                const price = parseFloat(row.querySelector('.item-price').value) || 0;
-                const cost = parseFloat(row.querySelector('.item-cost').value) || 0;
-                
-                const total = qty * price;
-                const totalModal = qty * cost;
-
-                totalAmount += total;
-                totalCost += totalModal;
-
-                if(name) items.push({ name, qty, unit, price, cost, total, totalModal });
-            });
-
-            const existingIndex = invoices.findIndex(i => i.no === no);
-            const invoiceData = {
-                no, date, buyer, address, rekening, items, totalAmount, totalCost,
-                profit: totalAmount - totalCost,
-                status: existingIndex >= 0 ? invoices[existingIndex].status : 'Belum Bayar'
-            };
-
-            if (existingIndex >= 0) {
-                invoices[existingIndex] = invoiceData;
-            } else {
-                invoices.push(invoiceData);
-            }
-
-            localStorage.setItem('invoices', JSON.stringify(invoices));
-            alert('Nota berhasil disimpan!');
-        }
-
-        function renderRekap() {
-            const tbody = document.getElementById('rekap-rows');
-            tbody.innerHTML = '';
-
-            let sumOmset = 0;
-            let sumModal = 0;
-            let sumLaba = 0;
-
-            invoices.forEach((inv, idx) => {
-                sumOmset += inv.totalAmount || 0;
-                sumModal += inv.totalCost || 0;
-                sumLaba += (inv.profit || (inv.totalAmount - (inv.totalCost || 0)));
-
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-2 border border-slate-300 font-bold">${inv.no}</td>
-                    <td class="p-2 border border-slate-300">${inv.date}</td>
-                    <td class="p-2 border border-slate-300">${inv.buyer}</td>
-                    <td class="p-2 border border-slate-300 text-right font-medium">${formatRupiah(inv.totalAmount)}</td>
-                    <td class="p-2 border border-slate-300 text-right text-slate-500">${formatRupiah(inv.totalCost)}</td>
-                    <td class="p-2 border border-slate-300 text-right font-bold text-emerald-600">${formatRupiah(inv.profit)}</td>
-                    <td class="p-2 border border-slate-300 text-center">
-                        <button onclick="togglePayment(${idx})" class="px-2 py-1 rounded text-xs font-bold ${inv.status === 'Sudah Bayar' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}">
-                            ${inv.status}
-                        </button>
-                    </td>
-                    <td class="p-2 border border-slate-300 text-center">
-                        <button onclick="editInvoice('${inv.no}')" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-1 rounded text-xs">
-                            ?? Revisi / Ubah
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('summary-omset').innerText = formatRupiah(sumOmset);
-            document.getElementById('summary-modal').innerText = formatRupiah(sumModal);
-            document.getElementById('summary-laba').innerText = formatRupiah(sumLaba);
-        }
-
-        function togglePayment(idx) {
-            invoices[idx].status = invoices[idx].status === 'Sudah Bayar' ? 'Belum Bayar' : 'Sudah Bayar';
-            localStorage.setItem('invoices', JSON.stringify(invoices));
-            renderRekap();
-        }
-
-        function editInvoice(no) {
-            const inv = invoices.find(i => i.no === no);
-            if (!inv) return;
-
-            document.getElementById('inv-no').value = inv.no;
-            document.getElementById('inv-date').value = inv.date;
-            document.getElementById('inv-buyer').value = inv.buyer;
-            document.getElementById('inv-address').value = inv.address;
-            document.getElementById('inv-rekening').value = inv.rekening;
-
-            const tbody = document.getElementById('item-rows');
-            tbody.innerHTML = '';
-
-            inv.items.forEach(item => {
-                addItemRow(item.name, item.qty, item.unit, item.price, item.cost);
-            });
-
-            switchTab('invoice');
-        }
-
-        // DATABASE BARANG LOGIC
-        function renderDatabaseTable() {
-            const tbody = document.getElementById('database-rows');
-            const searchKeyword = document.getElementById('search-db').value.toLowerCase();
-            tbody.innerHTML = '';
-
-            const filtered = barangDatabase.filter(b => b.name.toLowerCase().includes(searchKeyword));
-            document.getElementById('db-count').innerText = barangDatabase.length;
-
-            filtered.forEach((item, idx) => {
-                const margin = (item.price || 0) - (item.cost || 0);
-                const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-slate-50";
-                tr.innerHTML = `
-                    <td class="p-2 border border-slate-300 text-center">${idx + 1}</td>
-                    <td class="p-2 border border-slate-300 font-medium">${item.name}</td>
-                    <td class="p-2 border border-slate-300 text-center">${item.unit}</td>
-                    <td class="p-2 border border-slate-300 text-right">${formatRupiah(item.price)}</td>
-                    <td class="p-2 border border-slate-300 text-right text-slate-500">${formatRupiah(item.cost)}</td>
-                    <td class="p-2 border border-slate-300 text-right font-semibold text-emerald-600">${formatRupiah(margin)}</td>
-                    <td class="p-2 border border-slate-300 text-center space-x-1">
-                        <button onclick="editBarang(${idx})" class="bg-amber-500 hover:bg-amber-600 text-white px-2 py-0.5 rounded text-xs">Edit</button>
-                        <button onclick="deleteBarang(${idx})" class="bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded text-xs">Hapus</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function saveBarang(e) {
-            e.preventDefault();
-            const index = parseInt(document.getElementById('db-index').value);
-            const name = document.getElementById('db-name').value;
-            const unit = document.getElementById('db-unit').value;
-            const price = parseFloat(document.getElementById('db-price').value) || 0;
-            const cost = parseFloat(document.getElementById('db-cost').value) || 0;
-
-            if(index >= 0) {
-                barangDatabase[index] = { name, unit, price, cost };
-            } else {
-                barangDatabase.push({ name, unit, price, cost });
-            }
-
-            localStorage.setItem('barangDatabase', JSON.stringify(barangDatabase));
-            resetBarangForm();
-            renderDatabaseTable();
-            alert('Data barang berhasil disimpan!');
-        }
-
-        function editBarang(idx) {
-            const item = barangDatabase[idx];
-            document.getElementById('db-index').value = idx;
-            document.getElementById('db-name').value = item.name;
-            document.getElementById('db-unit').value = item.unit;
-            document.getElementById('db-price').value = item.price;
-            document.getElementById('db-cost').value = item.cost || 0;
-        }
-
-        function deleteBarang(idx) {
-            if(confirm('Hapus barang ini dari database?')) {
-                barangDatabase.splice(idx, 1);
-                localStorage.setItem('barangDatabase', JSON.stringify(barangDatabase));
-                renderDatabaseTable();
-            }
-        }
-
-        function resetBarangForm() {
-            document.getElementById('db-index').value = -1;
-            document.getElementById('form-barang').reset();
-        }
-    </script>
 </body>
 </html>
