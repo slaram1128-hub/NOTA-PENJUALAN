@@ -12,23 +12,69 @@
     table, th, td { border: 1px solid #ddd; }
     th, td { padding: 10px; text-align: left; }
     th { background-color: #2c3e50; color: white; }
-    input[type="number"], input[type="text"] { padding: 6px; width: 90%; }
-    button { padding: 8px 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    input, select { padding: 8px; width: 95%; box-sizing: border-box; }
+    button { padding: 8px 12px; background-color: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; margin-top: 5px; }
     button:hover { background-color: #219150; }
     .btn-danger { background-color: #e74c3c; }
     .btn-danger:hover { background-color: #c0392b; }
-    .flex-container { display: flex; gap: 20px; }
-    .flex-child { flex: 1; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+    .row { display: flex; gap: 15px; }
+    .col { flex: 1; }
   </style>
 </head>
 <body>
 
   <h2>KEDAI ARIEL - Management System</h2>
 
-  <!-- 1. EDIT & MANAJEMEN STOK BARANG -->
+  <!-- 1. INPUT NOTA PENJUALAN BARU -->
+  <div class="card">
+    <h3>📝 Buat / Input Nota Penjualan Baru</h3>
+    <div class="row">
+      <div class="col form-group">
+        <label>No. Nota</label>
+        <input type="text" id="noNota" placeholder="Contoh: NT-003">
+      </div>
+      <div class="col form-group">
+        <label>Tanggal</label>
+        <input type="date" id="tanggalNota">
+      </div>
+      <div class="col form-group">
+        <label>Nama Relasi / Pembeli</label>
+        <input type="text" id="pembeliNota" placeholder="Contoh: Buladu / Wongkaditi">
+      </div>
+    </div>
+
+    <h4>Detail Barang</h4>
+    <table id="tabelInputNota">
+      <thead>
+        <tr>
+          <th>Pilih Barang</th>
+          <th>Harga Beli (Modal)</th>
+          <th>Harga Jual</th>
+          <th>Jumlah (Qty)</th>
+          <th>Subtotal</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="bodyItemNota">
+        <!-- Item transaksi akan ditambahkan di sini -->
+      </tbody>
+    </table>
+    <br>
+    <button onclick="tambahBarisItem()">+ Tambah Barang</button>
+    <hr>
+    <div style="text-align: right; font-weight: bold; font-size: 1.2em;">
+      Total Nota: Rp <span id="grandTotalNota">0</span>
+    </div>
+    <br>
+    <button onclick="simpanNota()" style="background-color: #2980b9; width: 100%; padding: 12px; font-size: 16px;">Simpan Transaksi Nota</button>
+  </div>
+
+  <!-- 2. EDIT & MANAJEMEN STOK BARANG -->
   <div class="card">
     <h3>📦 Manajemen & Edit Stok Barang</h3>
-    <table id="tabelStok">
+    <table>
       <thead>
         <tr>
           <th>Kode / Nama Barang</th>
@@ -38,27 +84,23 @@
           <th>Aksi / Edit Manual</th>
         </tr>
       </thead>
-      <tbody id="bodyStok">
-        <!-- Data stok diisi via JS -->
-      </tbody>
+      <tbody id="bodyStok"></tbody>
     </table>
   </div>
 
-  <!-- 2. REKAP PENJUALAN PER RELASI / PEMBELI -->
+  <!-- 3. REKAP PENJUALAN PER RELASI / PEMBELI -->
   <div class="card">
     <h3>👤 Rekap Penjualan Per Relasi / Pembeli</h3>
     <button onclick="tampilkanRekapRelasi()">Proses Rekap Per Relasi</button>
     <div id="containerRekapRelasi"></div>
   </div>
 
-  <!-- 3. REKAP LABA RUGI PER NOTA -->
+  <!-- 4. REKAP LABA RUGI PER NOTA -->
   <div class="card">
     <h3>📊 Rekap & Laba Per Nota</h3>
     <button onclick="tampilkanRekapLaba()">Hitung Laba Per Nota</button>
-    
     <div id="ringkasanLaba" style="margin-top: 15px; font-weight: bold;"></div>
-    
-    <table id="tabelLaba" style="margin-top:10px;">
+    <table>
       <thead>
         <tr>
           <th>No. Nota</th>
@@ -69,40 +111,147 @@
           <th>Laba Bersih</th>
         </tr>
       </thead>
-      <tbody id="bodyLaba">
-        <!-- Data rekap laba diisi via JS -->
-      </tbody>
+      <tbody id="bodyLaba"></tbody>
     </table>
   </div>
 
   <script>
-    // --- DATA MASTER (Contoh Data In-Memory / LocalStorage) ---
+    // --- DATA MASTER ---
     let masterStok = JSON.parse(localStorage.getItem('masterStok')) || [
       { id: 1, nama: "Barang A", hargaBeli: 10000, hargaJual: 15000, stok: 50 },
       { id: 2, nama: "Barang B", hargaBeli: 20000, hargaJual: 25000, stok: 30 }
     ];
 
-    let dataTransaksi = JSON.parse(localStorage.getItem('dataTransaksi')) || [
-      {
-        noNota: "NT-001",
-        tanggal: "2026-09-09",
-        pembeli: "Buladu",
-        items: [
-          { nama: "Barang A", hargaBeli: 10000, hargaJual: 15000, qty: 2 },
-          { nama: "Barang B", hargaBeli: 20000, hargaJual: 25000, qty: 1 }
-        ]
-      },
-      {
-        noNota: "NT-002",
-        tanggal: "2026-09-09",
-        pembeli: "Wongkaditi",
-        items: [
-          { nama: "Barang A", hargaBeli: 10000, hargaJual: 15000, qty: 5 }
-        ]
-      }
-    ];
+    let dataTransaksi = JSON.parse(localStorage.getItem('dataTransaksi')) || [];
 
-    // --- 1. FITUR MANAJEMEN & EDIT STOK ---
+    // --- INITIALIZATION ---
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById('tanggalNota').valueAsDate = new Date();
+      renderTabelStok();
+      tambahBarisItem();
+      tampilkanRekapRelasi();
+      tampilkanRekapLaba();
+    });
+
+    // --- 1. LOGIKA BUAT NOTA ---
+    function tambahBarisItem() {
+      const tbody = document.getElementById('bodyItemNota');
+      const index = tbody.children.length;
+
+      let opsiBarang = '<option value="">-- Pilih Barang --</option>';
+      masterStok.forEach(item => {
+        opsiBarang += `<option value="${item.id}">${item.nama}</option>`;
+      });
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><select onchange="pilihBarangNota(this, ${index})">${opsiBarang}</select></td>
+        <td><input type="number" class="modal-item" value="0" readonly></td>
+        <td><input type="number" class="jual-item" value="0" onchange="hitungSubtotal(${index})"></td>
+        <td><input type="number" class="qty-item" value="1" onchange="hitungSubtotal(${index})"></td>
+        <td><span class="subtotal-item">0</span></td>
+        <td><button type="button" class="btn-danger" onclick="hapusBarisNota(this)">Hapus</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function pilihBarangNota(select, index) {
+      const row = select.closest('tr');
+      const selectedId = parseInt(select.value);
+      const barang = masterStok.find(b => b.id === selectedId);
+
+      if (barang) {
+        row.querySelector('.modal-item').value = barang.hargaBeli;
+        row.querySelector('.jual-item').value = barang.hargaJual;
+      } else {
+        row.querySelector('.modal-item').value = 0;
+        row.querySelector('.jual-item').value = 0;
+      }
+      hitungSubtotal(index);
+    }
+
+    function hitungSubtotal() {
+      const rows = document.querySelectorAll('#bodyItemNota tr');
+      let grandTotal = 0;
+
+      rows.forEach(row => {
+        const jual = parseFloat(row.querySelector('.jual-item').value) || 0;
+        const qty = parseFloat(row.querySelector('.qty-item').value) || 0;
+        const subtotal = jual * qty;
+        row.querySelector('.subtotal-item').innerText = subtotal.toLocaleString('id-ID');
+        grandTotal += subtotal;
+      });
+
+      document.getElementById('grandTotalNota').innerText = grandTotal.toLocaleString('id-ID');
+    }
+
+    function hapusBarisNota(btn) {
+      btn.closest('tr').remove();
+      hitungSubtotal();
+    }
+
+    function simpanNota() {
+      const noNota = document.getElementById('noNota').value;
+      const tanggal = document.getElementById('tanggalNota').value;
+      const pembeli = document.getElementById('pembeliNota').value;
+
+      if (!noNota || !pembeli) {
+        alert('Harap isi Nomor Nota dan Nama Pembeli!');
+        return;
+      }
+
+      const rows = document.querySelectorAll('#bodyItemNota tr');
+      let items = [];
+
+      rows.forEach(row => {
+        const select = row.querySelector('select');
+        const barangId = parseInt(select.value);
+        const hargaBeli = parseFloat(row.querySelector('.modal-item').value) || 0;
+        const hargaJual = parseFloat(row.querySelector('.jual-item').value) || 0;
+        const qty = parseFloat(row.querySelector('.qty-item').value) || 0;
+
+        if (barangId && qty > 0) {
+          const barangObj = masterStok.find(b => b.id === barangId);
+          items.push({
+            id: barangId,
+            nama: barangObj ? barangObj.nama : '',
+            hargaBeli,
+            hargaJual,
+            qty
+          });
+
+          // Potong Stok
+          if (barangObj) {
+            barangObj.stok -= qty;
+          }
+        }
+      });
+
+      if (items.length === 0) {
+        alert('Pilih minimal 1 barang dengan jumlah lebih dari 0!');
+        return;
+      }
+
+      const notaBaru = { noNota, tanggal, pembeli, items };
+      dataTransaksi.push(notaBaru);
+
+      // Simpan ke LocalStorage
+      localStorage.setItem('dataTransaksi', JSON.stringify(dataTransaksi));
+      localStorage.setItem('masterStok', JSON.stringify(masterStok));
+
+      alert('Nota Penjualan Berhasil Disimpan!');
+
+      // Reset Form & Refresh
+      document.getElementById('noNota').value = '';
+      document.getElementById('pembeliNota').value = '';
+      document.getElementById('bodyItemNota').innerHTML = '';
+      tambahBarisItem();
+      renderTabelStok();
+      tampilkanRekapRelasi();
+      tampilkanRekapLaba();
+    }
+
+    // --- 2. MANAJEMEN & EDIT STOK ---
     function renderTabelStok() {
       const tbody = document.getElementById('bodyStok');
       tbody.innerHTML = '';
@@ -114,9 +263,7 @@
             <td><input type="number" value="${item.hargaBeli}" onchange="updateHargaBeli(${index}, this.value)"></td>
             <td><input type="number" value="${item.hargaJual}" onchange="updateHargaJual(${index}, this.value)"></td>
             <td><input type="number" value="${item.stok}" id="inputStok-${index}"></td>
-            <td>
-              <button onclick="simpanEditStok(${index})">Simpan Stok</button>
-            </td>
+            <td><button onclick="simpanEditStok(${index})">Simpan Stok</button></td>
           </tr>
         `;
       });
@@ -126,7 +273,7 @@
       const inputBaru = document.getElementById(`inputStok-${index}`).value;
       masterStok[index].stok = parseInt(inputBaru) || 0;
       localStorage.setItem('masterStok', JSON.stringify(masterStok));
-      alert(`Stok ${masterStok[index].nama} berhasil diperbarui!`);
+      alert(`Stok ${masterStok[index].nama} diperbarui!`);
       renderTabelStok();
     }
 
@@ -140,17 +287,15 @@
       localStorage.setItem('masterStok', JSON.stringify(masterStok));
     }
 
-    // --- 2. FITUR REKAP PER RELASI / PEMBELI ---
+    // --- 3. REKAP PER RELASI / PEMBELI ---
     function tampilkanRekapRelasi() {
       const container = document.getElementById('containerRekapRelasi');
       container.innerHTML = '';
 
       const rekap = dataTransaksi.reduce((acc, nota) => {
         const relasi = nota.pembeli || "Umum";
-        if (!acc[relasi]) {
-          acc[relasi] = { totalHarga: 0, totalNota: 0, listNota: [] };
-        }
-        
+        if (!acc[relasi]) acc[relasi] = { totalHarga: 0, totalNota: 0, listNota: [] };
+
         const totalNota = nota.items.reduce((sum, i) => sum + (i.hargaJual * i.qty), 0);
         acc[relasi].totalHarga += totalNota;
         acc[relasi].totalNota += 1;
@@ -160,33 +305,30 @@
       }, {});
 
       for (const relasi in rekap) {
-        let htmlRelasi = `
-          <div style="border:1px solid #ccc; padding:10px; margin-top:10px; border-radius:5px;">
+        let html = `
+          <div style="border:1px solid #ccc; padding:10px; margin-top:10px; border-radius:5px; background-color:#fafafa;">
             <h4>Relasi: ${relasi}</h4>
             <p>Total Transaksi: ${rekap[relasi].totalNota} Nota | Total Penjualan: <b>Rp ${rekap[relasi].totalHarga.toLocaleString('id-ID')}</b></p>
             <ul>
         `;
         rekap[relasi].listNota.forEach(n => {
-          htmlRelasi += `<li>${n.noNota} - Rp ${n.total.toLocaleString('id-ID')}</li>`;
+          html += `<li>${n.noNota} - Rp ${n.total.toLocaleString('id-ID')}</li>`;
         });
-        htmlRelasi += `</ul></div>`;
-        container.innerHTML += htmlRelasi;
+        html += `</ul></div>`;
+        container.innerHTML += html;
       }
     }
 
-    // --- 3. FITUR REKAP & LABA PER NOTA ---
+    // --- 4. REKAP & LABA PER NOTA ---
     function tampilkanRekapLaba() {
       const tbody = document.getElementById('bodyLaba');
       const ringkasan = document.getElementById('ringkasanLaba');
       tbody.innerHTML = '';
 
-      let totalOmzetSemua = 0;
-      let totalModalSemua = 0;
-      let totalLabaSemua = 0;
+      let totalOmzetSemua = 0, totalModalSemua = 0, totalLabaSemua = 0;
 
       dataTransaksi.forEach(nota => {
-        let omzetNota = 0;
-        let modalNota = 0;
+        let omzetNota = 0, modalNota = 0;
 
         nota.items.forEach(item => {
           omzetNota += (item.hargaJual || 0) * (item.qty || 0);
@@ -194,7 +336,6 @@
         });
 
         const labaNota = omzetNota - modalNota;
-
         totalOmzetSemua += omzetNota;
         totalModalSemua += modalNota;
         totalLabaSemua += labaNota;
@@ -206,9 +347,7 @@
             <td>${nota.pembeli}</td>
             <td>Rp ${omzetNota.toLocaleString('id-ID')}</td>
             <td>Rp ${modalNota.toLocaleString('id-ID')}</td>
-            <td style="color:${labaNota >= 0 ? 'green' : 'red'}; font-weight:bold;">
-              Rp ${labaNota.toLocaleString('id-ID')}
-            </td>
+            <td style="color:${labaNota >= 0 ? 'green' : 'red'}; font-weight:bold;">Rp ${labaNota.toLocaleString('id-ID')}</td>
           </tr>
         `;
       });
@@ -216,16 +355,9 @@
       ringkasan.innerHTML = `
         Total Omzet: Rp ${totalOmzetSemua.toLocaleString('id-ID')} | 
         Total Modal: Rp ${totalModalSemua.toLocaleString('id-ID')} | 
-        <span style="color:green;">Total Laba Clean: Rp ${totalLabaSemua.toLocaleString('id-ID')}</span>
+        <span style="color:green;">Total Laba Bersih: Rp ${totalLabaSemua.toLocaleString('id-ID')}</span>
       `;
     }
-
-    // Inisialisasi awal saat halaman dimuat
-    document.addEventListener("DOMContentLoaded", () => {
-      renderTabelStok();
-      tampilkanRekapRelasi();
-      tampilkanRekapLaba();
-    });
   </script>
 </body>
 </html>
