@@ -267,18 +267,22 @@
     </div>
 
     <div class="card">
-      <div class="card-title">Master Data & Stok Barang (<span id="totalBarang">0</span> Item)</div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <div class="card-title" style="margin: 0;">Master Data & Stok Barang (<span id="totalBarang">0</span> Item)</div>
+        <button class="btn btn-danger no-print" onclick="hapusBarangMassal()">🗑️ Hapus Tercentang</button>
+      </div>
       <table>
         <thead>
           <tr>
-            <th>No</th>
+            <th style="width: 30px; text-align: center;"><input type="checkbox" id="checkAllBarang" onchange="togglePilihSemuaBarang(this)"></th>
+            <th style="width: 40px;">No</th>
             <th>Nama Barang</th>
             <th>Satuan</th>
             <th>Sisa Stok</th>
             <th>Harga Jual</th>
             <th>Harga Beli</th>
             <th>Margin / Profit</th>
-            <th class="no-print">Aksi</th>
+            <th class="no-print" style="width: 70px;">Aksi</th>
           </tr>
         </thead>
         <tbody id="tabelBarang"></tbody>
@@ -369,6 +373,8 @@
     const tbody = document.getElementById('tabelBarang');
     document.getElementById('totalBarang').innerText = dbBarang.length;
     tbody.innerHTML = '';
+    const checkAll = document.getElementById('checkAllBarang');
+    if(checkAll) checkAll.checked = false;
 
     dbBarang.forEach((item, index) => {
       const margin = item.jual - item.beli;
@@ -376,6 +382,7 @@
       const stokColor = stokVal <= 5 ? 'color: red; font-weight: bold;' : 'color: green; font-weight: bold;';
       tbody.innerHTML += `
         <tr>
+          <td style="text-align: center;"><input type="checkbox" class="check-item-barang" value="${index}"></td>
           <td>${index + 1}</td>
           <td><b>${item.nama}</b></td>
           <td>${item.satuan}</td>
@@ -391,6 +398,23 @@
     });
     localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
     updateDropdownNota();
+  }
+
+  function togglePilihSemuaBarang(master) {
+    document.querySelectorAll('.check-item-barang').forEach(cb => cb.checked = master.checked);
+  }
+
+  function hapusBarangMassal() {
+    const checkedBoxes = Array.from(document.querySelectorAll('.check-item-barang:checked'));
+    if (checkedBoxes.length === 0) {
+      return alert('Pilih/centang minimal satu barang yang ingin dihapus!');
+    }
+
+    if (confirm(`Yakin ingin menghapus ${checkedBoxes.length} barang tercentang?`)) {
+      const indicesToHapus = checkedBoxes.map(cb => parseInt(cb.value)).sort((a, b) => b - a);
+      indicesToHapus.forEach(idx => dbBarang.splice(idx, 1));
+      tampilkanBarang();
+    }
   }
 
   function simpanSatuBarang(e) {
