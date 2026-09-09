@@ -58,6 +58,12 @@
     .rekap-card { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
     .stat-box { padding: 15px; border-radius: 8px; color: white; text-align: center; }
 
+    /* Area Tanda Tangan & Cap */
+    .nota-footer { display: flex; justify-content: space-between; margin-top: 30px; text-align: center; }
+    .ttd-container { position: relative; width: 180px; height: 100px; margin: 10px auto; }
+    .ttd-img { max-width: 100%; max-height: 100px; object-fit: contain; }
+    .cap-img { position: absolute; top: 0; left: 20px; max-width: 100px; max-height: 100px; opacity: 0.85; object-fit: contain; }
+
     @media print {
       body { background: white; padding: 0; }
       header, .no-print { display: none !important; }
@@ -141,16 +147,41 @@
       <button class="btn btn-secondary no-print" style="margin-top: 10px;" onclick="tambahBarisNota()">+ Tambah Baris</button>
 
       <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="width: 50%;">
+        <div style="width: 60%;">
           <div class="form-group">
             <label>Terbilang :</label>
-            <input type="text" id="notaTerbilang" placeholder="Rupiah">
+            <input type="text" id="notaTerbilang" readonly style="background: #f1f5f9; font-weight: 600; color: #1e293b;">
           </div>
         </div>
-        <div style="width: 40%; text-align: right;">
+        <div style="width: 35%; text-align: right;">
           <h3>Total: <span id="notaGrandTotal">Rp 0</span></h3>
         </div>
       </div>
+
+      <!-- Unggah Tanda Tangan & Cap -->
+      <div class="nota-footer">
+        <div style="width: 40%;">
+          <p>Penerima / Pembeli,</p>
+          <div style="height: 80px;"></div>
+          <p>( .................................... )</p>
+        </div>
+        <div style="width: 40%;">
+          <p>Hormat Kami,</p>
+          <div class="ttd-container">
+            <img id="previewCap" class="cap-img" style="display:none;">
+            <img id="previewTTD" class="ttd-img" style="display:none;">
+          </div>
+          <p><b>KEDAI ARIEL</b></p>
+          
+          <div class="no-print" style="margin-top: 10px; font-size: 11px; text-align: center;">
+            <label>Upload TTD:</label>
+            <input type="file" accept="image/*" onchange="uploadGambar(this, 'previewTTD', 'ttdData')">
+            <label style="margin-top:5px; display:block;">Upload Cap/Stempel:</label>
+            <input type="file" accept="image/*" onchange="uploadGambar(this, 'previewCap', 'capData')">
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -266,7 +297,11 @@
   let dbBarang = JSON.parse(localStorage.getItem('dbBarang')) || [];
   let dbNota = JSON.parse(localStorage.getItem('dbNota')) || [];
 
+  // Perbaikan kompatibilitas data stok lama
+  dbBarang.forEach(b => { if(b.stok === undefined) b.stok = 0; });
+
   document.getElementById('notaTanggal').valueAsDate = new Date();
+  muatGambarSimpanan();
 
   function bukaTab(tabId, btn) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -274,6 +309,49 @@
     document.getElementById(tabId).classList.add('active');
     btn.classList.add('active');
     if(tabId === 'pageRekap') tampilkanRekap();
+  }
+
+  // --- LOGIKA TERBILANG OTOMATIS ---
+  function terbilang(n) {
+    const angka = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+    if (n < 12) return angka[n];
+    if (n < 20) return terbilang(n - 10) + " Belas";
+    if (n < 100) return terbilang(Math.floor(n / 10)) + " Puluh " + terbilang(n % 10);
+    if (n < 200) return "Seratus " + terbilang(n - 100);
+    if (n < 1000) return terbilang(Math.floor(n / 100)) + " Ratus " + terbilang(n % 100);
+    if (n < 2000) return "Seribu " + terbilang(n - 1000);
+    if (n < 1000000) return terbilang(Math.floor(n / 1000)) + " Ribu " + terbilang(n % 1000);
+    if (n < 1000000000) return terbilang(Math.floor(n / 1000000)) + " Juta " + terbilang(n % 1000000);
+    return "";
+  }
+
+  // --- UPLOAD TTD & CAP ---
+  function uploadGambar(input, targetId, storageKey) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById(targetId);
+        img.src = e.target.result;
+        img.style.display = 'block';
+        localStorage.setItem(storageKey, e.target.result);
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function muatGambarSimpanan() {
+    const ttd = localStorage.getItem('ttdData');
+    const cap = localStorage.getItem('capData');
+    if(ttd) {
+      const imgTTD = document.getElementById('previewTTD');
+      imgTTD.src = ttd;
+      imgTTD.style.display = 'block';
+    }
+    if(cap) {
+      const imgCap = document.getElementById('previewCap');
+      imgCap.src = cap;
+      imgCap.style.display = 'block';
+    }
   }
 
   // --- DATABASE BARANG & STOK ---
@@ -284,13 +362,14 @@
 
     dbBarang.forEach((item, index) => {
       const margin = item.jual - item.beli;
-      const stokColor = item.stok <= 5 ? 'color: red; font-weight: bold;' : 'color: green; font-weight: bold;';
+      const stokVal = item.stok ?? 0;
+      const stokColor = stokVal <= 5 ? 'color: red; font-weight: bold;' : 'color: green; font-weight: bold;';
       tbody.innerHTML += `
         <tr>
           <td>${index + 1}</td>
           <td><b>${item.nama}</b></td>
           <td>${item.satuan}</td>
-          <td style="${stokColor}">${item.stok}</td>
+          <td style="${stokColor}">${stokVal}</td>
           <td>Rp ${Number(item.jual).toLocaleString('id-ID')}</td>
           <td>Rp ${Number(item.beli).toLocaleString('id-ID')}</td>
           <td style="color: #3b82f6; font-weight: bold;">Rp ${Number(margin).toLocaleString('id-ID')}</td>
@@ -314,7 +393,7 @@
 
     const exist = dbBarang.find(b => b.nama.toLowerCase() === nama.toLowerCase());
     if(exist) {
-      exist.stok += stok;
+      exist.stok = (exist.stok || 0) + stok;
       exist.jual = jual;
       exist.beli = beli;
       exist.satuan = satuan;
@@ -371,7 +450,8 @@
       const selectedVal = select.value;
       select.innerHTML = '<option value="">-- Pilih Barang --</option>';
       dbBarang.forEach(b => {
-        select.innerHTML += `<option value="${b.nama}">${b.nama} (Stok: ${b.stok})</option>`;
+        const s = b.stok ?? 0;
+        select.innerHTML += `<option value="${b.nama}">${b.nama} (Stok: ${s})</option>`;
       });
       select.value = selectedVal;
     });
@@ -387,7 +467,7 @@
       <td>
         <select class="select-barang" onchange="pilihBarangNota(this)">
           <option value="">-- Pilih Barang --</option>
-          ${dbBarang.map(b => `<option value="${b.nama}">${b.nama} (Stok: ${b.stok})</option>`).join('')}
+          ${dbBarang.map(b => `<option value="${b.nama}">${b.nama} (Stok: ${b.stok ?? 0})</option>`).join('')}
         </select>
       </td>
       <td><input type="number" value="${itemData ? itemData.qty : 1}" min="1" onchange="hitungTotalNota()" class="input-qty"></td>
@@ -428,7 +508,15 @@
       tr.querySelector('.total-baris').innerText = `Rp ${total.toLocaleString('id-ID')}`;
       grandTotal += total;
     });
+
     document.getElementById('notaGrandTotal').innerText = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+    
+    // Terbilang Otomatis
+    if(grandTotal > 0) {
+      document.getElementById('notaTerbilang').value = terbilang(grandTotal).trim() + " Rupiah";
+    } else {
+      document.getElementById('notaTerbilang').value = "";
+    }
   }
 
   function simpanNota() {
@@ -453,8 +541,10 @@
       
       if(nama) {
         const barang = dbBarang.find(b => b.nama === nama);
-        if(barang && editIndex === -1 && barang.stok < qty) {
-          alert(`Stok ${nama} tidak mencukupi! Sisa stok: ${barang.stok}`);
+        const currentStok = barang ? (barang.stok ?? 0) : 0;
+
+        if(barang && editIndex === -1 && currentStok < qty) {
+          alert(`Stok ${nama} tidak mencukupi! Sisa stok: ${currentStok}`);
           validStok = false;
           return;
         }
@@ -464,9 +554,9 @@
         totalNota += qty * harga;
         totalModalNota += qty * modal;
 
-        // Potong Stok Baru
+        // Potong Stok
         if(barang && editIndex === -1) {
-          barang.stok -= qty;
+          barang.stok = currentStok - qty;
         }
       }
     });
