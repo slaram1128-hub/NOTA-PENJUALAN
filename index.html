@@ -307,6 +307,36 @@
   </div>
 </div>
 
+<!-- Modal Edit Harga Barang -->
+<div id="modalEditBarang" class="modal" style="display:none;">
+  <div class="modal-content" style="max-width:400px;">
+    <h3 style="margin-top:0;">Edit Harga Barang</h3>
+    <form id="formEditBarang" onsubmit="event.preventDefault(); simpanPerubahanBarang();">
+      <input type="hidden" id="editBarangIndex">
+      
+      <div style="margin-bottom:12px;">
+        <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:13px;">Nama Barang:</label>
+        <input type="text" id="editNamaBarang" readonly style="background:#f1f5f9; color:#64748b;">
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:13px;">Harga Beli / Modal (Rp):</label>
+        <input type="number" id="editHargaBeli" min="0" required>
+      </div>
+
+      <div style="margin-bottom:16px;">
+        <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:13px;">Harga Jual (Rp):</label>
+        <input type="number" id="editHargaJual" min="0" required>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-secondary" onclick="tutupModalEdit()">Batal</button>
+        <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   let dbBarang = JSON.parse(localStorage.getItem('dbBarang')) || [];
   let dbNota = JSON.parse(localStorage.getItem('dbNota')) || [];
@@ -391,6 +421,7 @@
           <td>Rp ${Number(item.beli).toLocaleString('id-ID')}</td>
           <td style="color: #3b82f6; font-weight: bold;">Rp ${Number(margin).toLocaleString('id-ID')}</td>
           <td class="no-print" style="text-align: center;">
+            <button class="btn btn-warning" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;" onclick="bukaModalEdit(${index})">Edit</button>
             <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="hapusBarang(${index})">Hapus</button>
           </td>
         </tr>
@@ -398,6 +429,37 @@
     });
     localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
     updateDropdownNota();
+  }
+
+  // --- FUNGSI EDIT HARGA BARANG ---
+  function bukaModalEdit(index) {
+    const barang = dbBarang[index];
+    if (barang) {
+      document.getElementById('editBarangIndex').value = index;
+      document.getElementById('editNamaBarang').value = barang.nama;
+      document.getElementById('editHargaBeli').value = barang.beli || 0;
+      document.getElementById('editHargaJual').value = barang.jual || 0;
+      document.getElementById('modalEditBarang').style.display = 'flex';
+    }
+  }
+
+  function tutupModalEdit() {
+    document.getElementById('modalEditBarang').style.display = 'none';
+  }
+
+  function simpanPerubahanBarang() {
+    const index = parseInt(document.getElementById('editBarangIndex').value);
+    const hargaBeliBaru = parseFloat(document.getElementById('editHargaBeli').value) || 0;
+    const hargaJualBaru = parseFloat(document.getElementById('editHargaJual').value) || 0;
+
+    if (index >= 0 && index < dbBarang.length) {
+      dbBarang[index].beli = hargaBeliBaru;
+      dbBarang[index].jual = hargaJualBaru;
+
+      tampilkanBarang();
+      tutupModalEdit();
+      alert('Harga barang berhasil diperbarui!');
+    }
   }
 
   function togglePilihSemuaBarang(master) {
@@ -528,7 +590,7 @@
     }
   }
 
-  function hapusBarisNota(btn) {
+  function hapusBarangNota(btn) {
     btn.closest('tr').remove();
     hitungTotalNota();
   }
@@ -681,123 +743,5 @@
   notaBaru();
 </script>
 
-  <!-- Modal Edit Barang -->
-<div id="modalEditBarang" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div class="modal-content" style="background:#fff; padding:20px; border-radius:8px; width:90%; max-width:400px;">
-    <h3 style="margin-top:0;">Edit Harga Barang</h3>
-    <form id="formEditBarang">
-      <input type="hidden" id="editBarangId">
-      
-      <div style="margin-bottom:12px;">
-        <label for="editNamaBarang" style="display:block; margin-bottom:4px; font-weight:bold;">Nama Barang:</label>
-        <input type="text" id="editNamaBarang" readonly style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:#f5f5f5;">
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <label for="editHargaBeli" style="display:block; margin-bottom:4px; font-weight:bold;">Harga Beli (Rp):</label>
-        <input type="number" id="editHargaBeli" min="0" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label for="editHargaJual" style="display:block; margin-bottom:4px; font-weight:bold;">Harga Jual (Rp):</label>
-        <input type="number" id="editHargaJual" min="0" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button type="button" onclick="tutupModalEdit()" style="padding:8px 16px; border:none; background:#888; color:#fff; border-radius:4px; cursor:pointer;">Batal</button>
-        <button type="button" onclick="simpanPerubahanBarang()" style="padding:8px 16px; border:none; background:#28a745; color:#fff; border-radius:4px; cursor:pointer;">Simpan</button>
-      </div>
-    </form>
-  </div>
-</div>
-  // 1. Membuka modal dan mengisi form sesuai barang yang dipilih
-function bukaModalEdit(id) {
-  // Cari item berdasarkan id di array database kamu (sesuaikan nama variabel array)
-  const barang = databaseBarang.find(item => item.id === id);
-
-  if (barang) {
-    document.getElementById('editBarangId').value = barang.id;
-    document.getElementById('editNamaBarang').value = barang.nama;
-    document.getElementById('editHargaBeli').value = barang.hargaBeli;
-    document.getElementById('editHargaJual').value = barang.hargaJual;
-
-    document.getElementById('modalEditBarang').style.display = 'flex';
-  }
-}
-
-// 2. Menutup modal
-function tutupModalEdit() {
-  document.getElementById('modalEditBarang').style.display = 'none';
-}
-
-// 3. Menyimpan perubahan ke database/array & update tampilan
-function simpanPerubahanBarang() {
-  const id = document.getElementById('editBarangId').value;
-  const hargaBeliBaru = parseFloat(document.getElementById('editHargaBeli').value) || 0;
-  const hargaJualBaru = parseFloat(document.getElementById('editHargaJual').value) || 0;
-
-  const index = databaseBarang.findIndex(item => item.id === id);
-
-  if (index !== -1) {
-    // Update data di memori
-    databaseBarang[index].hargaBeli = hargaBeliBaru;
-    databaseBarang[index].hargaJual = hargaJualBaru;
-
-    // Simpan ke localStorage (sesuaikan key localStorage kamu)
-    localStorage.setItem('databaseBarang', JSON.stringify(databaseBarang));
-
-    // Render ulang tabel database agar harga langsung terbarui
-    renderTabelDatabase();
-
-    tutupModalEdit();
-    alert('Harga beli dan harga jual berhasil diperbarui!');
-  }
-}
-// Contoh potongan pembuatan baris tabel di JavaScript:
-let html = '';
-databaseBarang.forEach(barang => {
-  html += `
-    <tr>
-      <td>${barang.nama}</td>
-      <td>Rp ${barang.hargaBeli.toLocaleString('id-ID')}</td>
-      <td>Rp ${barang.hargaJual.toLocaleString('id-ID')}</td>
-      <td>
-        <!-- Tombol Edit memanggil fungsi bukaModalEdit dengan ID barang -->
-        <button onclick="bukaModalEdit('${barang.id}')" class="btn-edit">Edit</button>
-      </td>
-    </tr>
-  `;
-});
-document.getElementById('tabelDatabaseBody').innerHTML = html;
-  <!-- Modal Edit Barang -->
-<div id="modalEditBarang" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div style="background:#fff; padding:20px; border-radius:8px; width:90%; max-width:400px; box-shadow:0 4px 10px rgba(0,0,0,0.2);">
-    <h3 style="margin-top:0; color:#333;">Edit Harga Barang</h3>
-    <form id="formEditBarang">
-      <input type="hidden" id="editBarangId">
-      
-      <div style="margin-bottom:12px;">
-        <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:14px;">Nama Barang:</label>
-        <input type="text" id="editNamaBarang" readonly style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; background:#f0f0f0;">
-      </div>
-
-      <div style="margin-bottom:12px;">
-        <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:14px;">Harga Beli (Rp):</label>
-        <input type="number" id="editHargaBeli" min="0" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-
-      <div style="margin-bottom:16px;">
-        <label style="display:block; margin-bottom:4px; font-weight:bold; font-size:14px;">Harga Jual (Rp):</label>
-        <input type="number" id="editHargaJual" min="0" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
-      </div>
-
-      <div style="display:flex; justify-content:flex-end; gap:10px;">
-        <button type="button" onclick="tutupModalEdit()" style="padding:8px 16px; border:none; background:#6c757d; color:#fff; border-radius:4px; cursor:pointer;">Batal</button>
-        <button type="button" onclick="simpanPerubahanBarang()" style="padding:8px 16px; border:none; background:#28a745; color:#fff; border-radius:4px; cursor:pointer;">Simpan</button>
-      </div>
-    </form>
-  </div>
-</div>
-  
 </body>
 </html>
