@@ -161,7 +161,7 @@
       <!-- Unggah Tanda Tangan & Kotak Rekening -->
       <div class="nota-footer">
         
-        <!-- Kotak Rekening Bank (Dapat Diedit Langsung) -->
+        <!-- Kotak Rekening Bank -->
         <div style="border: 2px dashed #94a3b8; border-radius: 8px; padding: 12px 16px; min-width: 280px; background-color: #f8fafc;">
           <div style="font-weight: bold; font-size: 13px; color: #334155; margin-bottom: 6px; text-transform: uppercase;">
             Pembayaran Via Transfer:
@@ -267,14 +267,11 @@
     </div>
 
     <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-        <div class="card-title" style="margin: 0;">Master Data & Stok Barang (<span id="totalBarang">0</span> Item)</div>
-        <button class="btn btn-danger no-print" onclick="hapusBarangMassal()">🗑️ Hapus Tercentang</button>
-      </div>
+      <div class="card-title" style="margin-bottom: 15px;">Master Data & Stok Barang (<span id="totalBarang">0</span> Item)</div>
       <table>
         <thead>
           <tr>
-            <th style="width: 30px; text-align: center;"><input type="checkbox" id="checkAllBarang" onchange="togglePilihSemuaBarang(this)"></th>
+            <th style="width: 30px; text-align: center;"><input type="checkbox" id="checkAllBarang" title="Pilih Semua" onchange="togglePilihSemuaBarang(this)"></th>
             <th style="width: 40px;">No</th>
             <th>Nama Barang</th>
             <th>Satuan</th>
@@ -282,7 +279,10 @@
             <th>Harga Jual</th>
             <th>Harga Beli</th>
             <th>Margin / Profit</th>
-            <th class="no-print" style="width: 70px;">Aksi</th>
+            <th class="no-print" style="width: 170px; text-align: center;">
+              AKSI<br>
+              <button class="btn btn-danger" style="padding: 2px 8px; font-size: 11px; margin-top: 4px;" onclick="hapusBarangMassal()">🗑️ Hapus Tercentang</button>
+            </th>
           </tr>
         </thead>
         <tbody id="tabelBarang"></tbody>
@@ -390,7 +390,7 @@
           <td>Rp ${Number(item.jual).toLocaleString('id-ID')}</td>
           <td>Rp ${Number(item.beli).toLocaleString('id-ID')}</td>
           <td style="color: #3b82f6; font-weight: bold;">Rp ${Number(margin).toLocaleString('id-ID')}</td>
-          <td class="no-print">
+          <td class="no-print" style="text-align: center;">
             <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="hapusBarang(${index})">Hapus</button>
           </td>
         </tr>
