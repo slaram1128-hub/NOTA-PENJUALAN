@@ -6,8 +6,8 @@
   <title>Aplikasi Invoice - Kedai Ariel</title>
   <style>
     :root {
-      --primary: #3b82f6;
-      --primary-dark: #1d4ed8;
+      --primary: #1e1b4b;
+      --accent: #3b82f6;
       --bg: #f8fafc;
       --surface: #ffffff;
       --text: #0f172a;
@@ -17,9 +17,15 @@
     body { background-color: var(--bg); color: var(--text); padding: 20px; }
     .container { max-width: 1000px; margin: 0 auto; }
     
-    header { background: #1e1b4b; color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    header { background: var(--primary); color: white; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
     header h1 { font-size: 20px; }
+    .nav-tabs { display: flex; gap: 10px; }
+    .nav-btn { background: rgba(255,255,255,0.2); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: 600; }
+    .nav-btn.active { background: white; color: var(--primary); }
     
+    .page { display: none; }
+    .page.active { display: block; }
+
     .card { background: var(--surface); padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px; border: 1px solid var(--border); }
     .card-title { font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #334155; }
     
@@ -29,8 +35,7 @@
     input, select, textarea { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; width: 100%; }
     
     .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
-    .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-primary { background: var(--accent); color: white; }
     .btn-success { background: #10b981; color: white; }
     .btn-danger { background: #ef4444; color: white; }
     .btn-secondary { background: #64748b; color: white; }
@@ -38,77 +43,164 @@
     table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
     th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
     th { background: #f1f5f9; font-weight: 600; }
+
+    /* Layout Nota Printable */
+    .nota-box { background: white; padding: 30px; border-radius: 8px; border: 1px solid var(--border); max-width: 800px; margin: auto; }
+    .nota-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--border); padding-bottom: 15px; margin-bottom: 15px; }
     
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000; }
     .modal-content { background: white; padding: 25px; border-radius: 8px; width: 90%; max-width: 600px; }
+
+    @media print {
+      body { background: white; padding: 0; }
+      header, .no-print { display: none !important; }
+      .nota-box { border: none; padding: 0; width: 100%; }
+      .page { display: block !important; }
+      #pageDatabase, #pageRekap { display: none !important; }
+    }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <header>
-    <h1>Kedai Ariel - Invoice & Laba</h1>
+  <header class="no-print">
+    <h1>KEDAI ARIEL - Invoice & Laba</h1>
+    <div class="nav-tabs">
+      <button class="nav-btn active" onclick="bukaTab('pageNota', this)">Buat / Edit Nota</button>
+      <button class="nav-btn" onclick="bukaTab('pageDatabase', this)">Database Barang</button>
+    </div>
   </header>
 
-  <!-- Form Tambah Satu Barang -->
-  <div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <span class="card-title" style="margin:0;">Tambah / Edit Item Barang Database</span>
-      <button class="btn btn-success" onclick="bukaModalPaste()">📋 Import / Paste Banyak Barang</button>
+  <!-- TAB 1: BUAT NOTA PENJUALAN -->
+  <div id="pageNota" class="page active">
+    <div class="no-print" style="margin-bottom: 15px; display: flex; gap: 10px;">
+      <button class="btn btn-success" onclick="notaBaru()">+ Nota Baru</button>
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Cetak / Print PDF</button>
     </div>
-    
-    <form id="formBarang" onsubmit="simpanSatuBarang(event)">
-      <div class="grid-form">
-        <div class="form-group">
-          <label>Nama Barang</label>
-          <input type="text" id="namaBarang" placeholder="Contoh: Cabe Merah" required>
+
+    <div class="nota-box">
+      <div class="nota-header">
+        <div>
+          <h2 style="color: var(--primary);">KEDAI ARIEL</h2>
+          <p style="font-size: 12px; color: #64748b;">Nota Penjualan & Tagihan Resmi</p>
         </div>
-        <div class="form-group">
-          <label>Satuan</label>
-          <input type="text" id="satuanBarang" placeholder="kg / bks / ball" required>
-        </div>
-        <div class="form-group">
-          <label>Harga Jual (Rp)</label>
-          <input type="number" id="hargaJual" placeholder="85000" required>
-        </div>
-        <div class="form-group">
-          <label>Harga Beli / Modal (Rp)</label>
-          <input type="number" id="hargaBeli" placeholder="72500" required>
+        <div style="text-align: right;">
+          <h3 style="color: #64748b;">INVOICE</h3>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary" style="float: right;">Simpan Barang</button>
-      <div style="clear: both;"></div>
-    </form>
+
+      <div class="grid-form">
+        <div class="form-group">
+          <label>No Invoice</label>
+          <input type="text" id="notaNo" value="1">
+        </div>
+        <div class="form-group">
+          <label>Tanggal Pesanan</label>
+          <input type="date" id="notaTanggal">
+        </div>
+        <div class="form-group">
+          <label>Nama Pembeli</label>
+          <input type="text" id="notaPembeli" placeholder="Nama Pelanggan / Toko">
+        </div>
+        <div class="form-group">
+          <label>Alamat</label>
+          <input type="text" id="notaAlamat" placeholder="Alamat Pembeli">
+        </div>
+      </div>
+
+      <table id="tabelItemNota">
+        <thead>
+          <tr>
+            <th style="width: 50px;">No</th>
+            <th>Nama Barang</th>
+            <th style="width: 80px;">Jumlah</th>
+            <th style="width: 80px;">Satuan</th>
+            <th style="width: 120px;">Harga Satuan</th>
+            <th style="width: 120px;">Total</th>
+            <th class="no-print" style="width: 50px;">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="bodyItemNota">
+          <!-- Item baris nota -->
+        </tbody>
+      </table>
+
+      <button class="btn btn-secondary no-print" style="margin-top: 10px;" onclick="tambahBarisNota()">+ Tambah Baris</button>
+
+      <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+        <div style="width: 50%;">
+          <div class="form-group">
+            <label>Terbilang :</label>
+            <input type="text" id="notaTerbilang" placeholder="Rupiah">
+          </div>
+        </div>
+        <div style="width: 40%; text-align: right;">
+          <h3>Total: <span id="notaGrandTotal">Rp 0</span></h3>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- Master Data Barang -->
-  <div class="card">
-    <div class="card-title">Master Data Barang (<span id="totalBarang">0</span> Item)</div>
-    <table>
-      <thead>
-        <tr>
-          <th>No</th>
-          <th>Nama Barang</th>
-          <th>Satuan</th>
-          <th>Harga Jual</th>
-          <th>Harga Beli (Modal)</th>
-          <th>Margin Laba</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody id="tabelBarang">
-        <!-- Data dimasukkan via Javascript -->
-      </tbody>
-    </table>
+  <!-- TAB 2: DATABASE BARANG & IMPORT EXCEL -->
+  <div id="pageDatabase" class="page">
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+        <span class="card-title" style="margin:0;">Tambah / Edit Item Barang Database</span>
+        <button class="btn btn-success" onclick="bukaModalPaste()">📋 Import / Paste Banyak Barang</button>
+      </div>
+      
+      <form id="formBarang" onsubmit="simpanSatuBarang(event)">
+        <div class="grid-form">
+          <div class="form-group">
+            <label>Nama Barang</label>
+            <input type="text" id="namaBarang" placeholder="Contoh: Cabe Merah" required>
+          </div>
+          <div class="form-group">
+            <label>Satuan</label>
+            <input type="text" id="satuanBarang" placeholder="kg / bks" required>
+          </div>
+          <div class="form-group">
+            <label>Harga Jual (Rp)</label>
+            <input type="number" id="hargaJual" placeholder="85000" required>
+          </div>
+          <div class="form-group">
+            <label>Harga Beli / Modal (Rp)</label>
+            <input type="number" id="hargaBeli" placeholder="72500" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="float: right;">Simpan Barang</button>
+        <div style="clear: both;"></div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Master Data Barang (<span id="totalBarang">0</span> Item)</div>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Nama Barang</th>
+            <th>Satuan</th>
+            <th>Harga Jual</th>
+            <th>Harga Beli (Modal)</th>
+            <th>Margin Laba</th>
+            <th class="no-print">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="tabelBarang">
+          <!-- Data dari JS -->
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <!-- Modal Paste Data Excel / Word -->
 <div class="modal" id="modalPaste">
   <div class="modal-content">
-    <h3 style="margin-bottom: 10px;">Salin / Paste Data dari Excel atau Word</h3>
-    <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">
-      Copy kolom dari Excel atau Word dengan urutan: <br>
+    <h3>Salin / Paste Data dari Excel atau Word</h3>
+    <p style="font-size: 13px; color: #64748b; margin: 10px 0;">
+      Copy kolom dari Excel dengan urutan: <br>
       <b>Nama Barang | Satuan | Harga Jual | Harga Beli</b>
     </p>
     <textarea id="teksPaste" rows="8" placeholder="Contoh salinan dari Excel:&#10;Bawang Merah	kg	40000	35000&#10;Cabe Rawit	kg	145000	108000"></textarea>
@@ -121,7 +213,16 @@
 
 <script>
   let dbBarang = JSON.parse(localStorage.getItem('dbBarang')) || [];
+  document.getElementById('notaTanggal').valueAsDate = new Date();
 
+  function bukaTab(tabId, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // --- LOGIKA DATABASE BARANG ---
   function tampilkanBarang() {
     const tbody = document.getElementById('tabelBarang');
     document.getElementById('totalBarang').innerText = dbBarang.length;
@@ -137,13 +238,14 @@
           <td>Rp ${Number(item.jual).toLocaleString('id-ID')}</td>
           <td>Rp ${Number(item.beli).toLocaleString('id-ID')}</td>
           <td style="color: green; font-weight: bold;">Rp ${Number(margin).toLocaleString('id-ID')}</td>
-          <td>
+          <td class="no-print">
             <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="hapusBarang(${index})">Hapus</button>
           </td>
         </tr>
       `;
     });
     localStorage.setItem('dbBarang', JSON.stringify(dbBarang));
+    updateDropdownNota();
   }
 
   function simpanSatuBarang(e) {
@@ -176,7 +278,6 @@
     let jumlahBerhasil = 0;
 
     baris.forEach(row => {
-      // Split berdasarkan Tab (Excel) atau koma/titik koma
       const kolom = row.split(/\t|,/);
       if (kolom.length >= 3) {
         const nama = kolom[0].trim();
@@ -197,8 +298,78 @@
     alert(`Berhasil menambahkan ${jumlahBerhasil} barang ke Master Data!`);
   }
 
-  // Muat data saat halaman dibuka
+  // --- LOGIKA NOTA PENJUALAN ---
+  function updateDropdownNota() {
+    document.querySelectorAll('.select-barang').forEach(select => {
+      const selectedVal = select.value;
+      select.innerHTML = '<option value="">-- Pilih Barang --</option>';
+      dbBarang.forEach(b => {
+        select.innerHTML += `<option value="${b.nama}">${b.nama}</option>`;
+      });
+      select.value = selectedVal;
+    });
+  }
+
+  function tambahBarisNota() {
+    const tbody = document.getElementById('bodyItemNota');
+    const no = tbody.children.length + 1;
+    const tr = document.createElement('tr');
+    
+    tr.innerHTML = `
+      <td>${no}</td>
+      <td>
+        <select class="select-barang" onchange="pilihBarangNota(this)">
+          <option value="">-- Pilih Barang --</option>
+          ${dbBarang.map(b => `<option value="${b.nama}">${b.nama}</option>`).join('')}
+        </select>
+      </td>
+      <td><input type="number" value="1" min="1" onchange="hitungTotalNota()" class="input-qty"></td>
+      <td><input type="text" class="input-satuan"></td>
+      <td><input type="number" value="0" onchange="hitungTotalNota()" class="input-harga"></td>
+      <td class="total-baris">Rp 0</td>
+      <td class="no-print"><button class="btn btn-danger" style="padding: 2px 6px;" onclick="hapusBarisNota(this)">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function pilihBarangNota(select) {
+    const row = select.closest('tr');
+    const barang = dbBarang.find(b => b.nama === select.value);
+    if(barang) {
+      row.querySelector('.input-satuan').value = barang.satuan;
+      row.querySelector('.input-harga').value = barang.jual;
+      hitungTotalNota();
+    }
+  }
+
+  function hapusBarisNota(btn) {
+    btn.closest('tr').remove();
+    hitungTotalNota();
+  }
+
+  function hitungTotalNota() {
+    let grandTotal = 0;
+    document.querySelectorAll('#bodyItemNota tr').forEach(tr => {
+      const qty = parseFloat(tr.querySelector('.input-qty').value) || 0;
+      const harga = parseFloat(tr.querySelector('.input-harga').value) || 0;
+      const total = qty * harga;
+      tr.querySelector('.total-baris').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+      grandTotal += total;
+    });
+    document.getElementById('notaGrandTotal').innerText = `Rp ${grandTotal.toLocaleString('id-ID')}`;
+  }
+
+  function notaBaru() {
+    document.getElementById('bodyItemNota').innerHTML = '';
+    document.getElementById('notaPembeli').value = '';
+    document.getElementById('notaAlamat').value = '';
+    tambahBarisNota();
+    hitungTotalNota();
+  }
+
+  // Inisialisasi awal
   tampilkanBarang();
+  tambahBarisNota();
 </script>
 
 </body>
